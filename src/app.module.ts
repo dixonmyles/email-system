@@ -6,6 +6,7 @@ import { GmailAccountModule } from './gmail-account/gmail-account.module';
 
 @Module({
   imports: [
+    GmailAccountModule,
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: 'localhost',
@@ -16,7 +17,6 @@ import { GmailAccountModule } from './gmail-account/gmail-account.module';
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true,
     }),
-    GmailAccountModule,
   ],
   controllers: [AppController],
   providers: [AppService],
