@@ -1,4 +1,28 @@
-import { Controller } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Param,
+  Patch,
+  Post,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
+import { GmailAccountService } from './gmail-account.service';
+import { CreateGmailAccountDTO } from './dtos/create-gmail-account.dto';
+import { UpdateGmailAccountDTO } from './dtos/update-gmail-account.dto';
 
-@Controller('gmail-account')
-export class GmailAccountController {}
+@UsePipes(ValidationPipe)
+@Controller('gmail-accounts')
+export class GmailAccountController {
+  constructor(private readonly gmailAccountService: GmailAccountService) {}
+
+  @Post()
+  async create(@Body() dto: CreateGmailAccountDTO) {
+    return await this.gmailAccountService.create(dto);
+  }
+
+  @Patch(':id')
+  async update(@Param('id') id: string, @Body() dto: UpdateGmailAccountDTO) {
+    return await this.gmailAccountService.update(id, dto);
+  }
+}
