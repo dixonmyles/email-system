@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  Get,
   Param,
   Patch,
   Post,
+  Query,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
@@ -24,5 +26,10 @@ export class GmailAccountController {
   @Patch(':id')
   async update(@Param('id') id: string, @Body() dto: UpdateGmailAccountDTO) {
     return await this.gmailAccountService.update(id, dto);
+  }
+
+  @Get('webhook')
+  async getWebhook(@Query() query: { code: string; state: string }) {
+    return await this.gmailAccountService.getWebhook(query);
   }
 }
