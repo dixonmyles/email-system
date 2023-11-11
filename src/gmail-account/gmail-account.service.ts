@@ -6,8 +6,13 @@ import { CreateGmailAccountDTO } from './dtos/create-gmail-account.dto';
 import { UpdateGmailAccountDTO } from './dtos/update-gmail-account.dto';
 import getOAuth2Client from '../shared/utils/getOAuth2Client';
 import { customMessageResponse } from '../shared/responses/customMessage.responses';
+import { Credentials } from 'google-auth-library/build/src/auth/credentials';
 import { MESSAGE } from '../shared/utils/constants';
-import { responseMessageInterface } from '../shared/utils/interfaces';
+import {
+  responseMessageInterface,
+  tokenInterface,
+  webhookQueryInterface,
+} from '../shared/utils/interfaces';
 
 @Injectable()
 export class GmailAccountService {
@@ -67,10 +72,9 @@ export class GmailAccountService {
    * @param query An object containing the code and state for the webhook.
    * @returns An object containing a success message and the email of the Gmail account that was updated.
    */
-  async getWebhook(query: {
-    code: string;
-    state: string;
-  }): Promise<responseMessageInterface> {
+  async getWebhook(
+    query: webhookQueryInterface,
+  ): Promise<responseMessageInterface> {
     const oAuth2Client = getOAuth2Client();
     const { tokens } = await oAuth2Client.getToken(query.code);
 
@@ -112,7 +116,7 @@ export class GmailAccountService {
    * @param token The token to refresh.
    * @returns The updated credentials.
    */
-  public async refreshToken(token: any): Promise<any> {
+  public async refreshToken(token: tokenInterface): Promise<Credentials> {
     const oAuth2Client = getOAuth2Client(token);
     const refreshedTokenResponse = await oAuth2Client.refreshAccessToken();
     return refreshedTokenResponse.credentials;
@@ -135,13 +139,7 @@ export class GmailAccountService {
    * @param id The ID of the Gmail account to get the token for.
    * @returns The token for the Gmail account, or null if the account is not found.
    */
-  public async getTokenFromDB(id: string): Promise<{
-    access_token: string;
-    refresh_token: string;
-    scope: string;
-    expiry_date: number;
-    token_type: string;
-  } | null> {
+  public async getTokenFromDB(id: string): Promise<tokenInterface | null> {
     const user = await this.gmailAccountRepository.findOne({ where: { id } });
     if (user) {
       return {
