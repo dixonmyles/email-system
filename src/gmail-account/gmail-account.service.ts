@@ -13,6 +13,11 @@ export class GmailAccountService {
     private gmailAccountRepository: Repository<GmailAccount>,
   ) {}
 
+  /**
+   * Creates a new Gmail account with the provided data and returns the OAuth2 URL for user email access.
+   * @param dto The data for the new Gmail account.
+   * @returns The OAuth2 URL for user email access.
+   */
   async create(dto: CreateGmailAccountDTO): Promise<string> {
     const gmailAccount = this.gmailAccountRepository.create(dto);
     await this.gmailAccountRepository.save(gmailAccount);
@@ -26,11 +31,22 @@ export class GmailAccountService {
     return authUrl;
   }
 
+  /**
+   * Updates an existing Gmail account with the provided data.
+   * @param id The ID of the Gmail account to update.
+   * @param dto The data to update the Gmail account with.
+   * @returns The updated Gmail account.
+   */
   async update(id: string, dto: UpdateGmailAccountDTO): Promise<GmailAccount> {
     await this.gmailAccountRepository.update(id, dto);
     return await this.gmailAccountRepository.findOne({ where: { id } });
   }
 
+  /**
+   * Gets the webhook for the provided code and state.
+   * @param query An object containing the code and state for the webhook.
+   * @returns An object containing a success message and the email associated with the webhook.
+   */
   async getWebhook(query: { code: string; state: string }) {
     const oAuth2Client = getOAuth2Client();
     const { tokens } = await oAuth2Client.getToken(query.code);
@@ -58,16 +74,31 @@ export class GmailAccountService {
     };
   }
 
+  /**
+   * Checks if the provided token is expired.
+   * @param tokenExpiryDate The expiry date of the token.
+   * @returns A boolean indicating whether the token is expired.
+   */
   public isTokenExpired(tokenExpiryDate: number): boolean {
     return tokenExpiryDate <= Date.now();
   }
 
+  /**
+   * Refreshes the provided token and returns the updated credentials.
+   * @param token The token to refresh.
+   * @returns The updated credentials.
+   */
   public async refreshToken(token: any): Promise<any> {
     const oAuth2Client = getOAuth2Client(token);
     const refreshedTokenResponse = await oAuth2Client.refreshAccessToken();
     return refreshedTokenResponse.credentials;
   }
 
+  /**
+   * Updates the token for the Gmail account with the provided ID.
+   * @param id The ID of the Gmail account to update.
+   * @param updatedToken The updated token to save.
+   */
   public async updateTokenInDB(id: string, updatedToken: any): Promise<void> {
     const user = await this.gmailAccountRepository.findOne({ where: { id } });
     if (user) {
@@ -75,7 +106,11 @@ export class GmailAccountService {
     }
   }
 
-  // Function to get a token from the database
+  /**
+   * Gets the token for the Gmail account with the provided ID from the database.
+   * @param id The ID of the Gmail account to get the token for.
+   * @returns The token for the Gmail account, or null if the account is not found.
+   */
   public async getTokenFromDB(id: string): Promise<{
     access_token: string;
     refresh_token: string;
@@ -97,7 +132,11 @@ export class GmailAccountService {
     return null;
   }
 
-  // Function to validate the token and get an updated token if it is expired
+  /**
+   * Validates the token for the Gmail account with the provided ID and returns an updated token if it is expired.
+   * @param id The ID of the Gmail account to validate the token for.
+   * @returns The updated token, or null if the account is not found.
+   */
   public async validateToken(id: string): Promise<any> {
     const token = await this.getTokenFromDB(id);
     if (token) {
