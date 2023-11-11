@@ -1,7 +1,7 @@
 import { responseMessageInterface } from '../utils/interfaces';
 
 /**
- * Construcs a custom message response object
+ * Constructs a custom message response object
  *
  * Generates a standard format for API responses. The response will contain a status code, a message, and data.
  *
@@ -13,7 +13,7 @@ import { responseMessageInterface } from '../utils/interfaces';
 export function customMessageResponse(
   statusCode: number,
   message: string,
-  data: any,
+  data = {},
 ): responseMessageInterface {
   return {
     statusCode,

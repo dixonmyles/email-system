@@ -1,10 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { GmailAccount } from './entities/gmail-account.entity';
 import { CreateGmailAccountDTO } from './dtos/create-gmail-account.dto';
 import { UpdateGmailAccountDTO } from './dtos/update-gmail-account.dto';
 import getOAuth2Client from '../shared/utils/getOAuth2Client';
+import { customMessageResponse } from '../shared/responses/customMessage.responses';
+import { MESSAGE } from '../shared/utils/constants';
+import { responseMessageInterface } from '../shared/utils/interfaces';
 
 @Injectable()
 export class GmailAccountService {
@@ -16,38 +19,58 @@ export class GmailAccountService {
   /**
    * Creates a new Gmail account with the provided data and returns the OAuth2 URL for user email access.
    * @param dto The data for the new Gmail account.
-   * @returns The OAuth2 URL for user email access.
+   * @returns An object containing a success message and the OAuth2 URL for user email access.
    */
-  async create(dto: CreateGmailAccountDTO): Promise<string> {
-    const gmailAccount = this.gmailAccountRepository.create(dto);
-    await this.gmailAccountRepository.save(gmailAccount);
-    // OAuth 2 call for getting user email access
-    const oAuth2Client = getOAuth2Client();
-    const authUrl = oAuth2Client.generateAuthUrl({
-      access_type: 'offline',
-      scope: ['https://mail.google.com/'],
-      state: dto.email,
-    });
-    return authUrl;
+  async create(dto: CreateGmailAccountDTO): Promise<responseMessageInterface> {
+    try {
+      const gmailAccount = this.gmailAccountRepository.create(dto);
+      await this.gmailAccountRepository.save(gmailAccount);
+      // OAuth 2 call for getting user email access
+      const oAuth2Client = getOAuth2Client();
+      const authUrl = oAuth2Client.generateAuthUrl({
+        access_type: 'offline',
+        scope: ['https://mail.google.com/'],
+        state: dto.email,
+      });
+      return customMessageResponse(HttpStatus.CREATED, MESSAGE.SUCCESS, {
+        authUrl,
+      });
+    } catch (error) {
+      return customMessageResponse(HttpStatus.BAD_REQUEST, MESSAGE.BAD_REQUEST);
+    }
   }
 
   /**
    * Updates an existing Gmail account with the provided data.
    * @param id The ID of the Gmail account to update.
    * @param dto The data to update the Gmail account with.
-   * @returns The updated Gmail account.
+   * @returns An object containing a success message and the updated Gmail account.
    */
-  async update(id: string, dto: UpdateGmailAccountDTO): Promise<GmailAccount> {
-    await this.gmailAccountRepository.update(id, dto);
-    return await this.gmailAccountRepository.findOne({ where: { id } });
+  async update(
+    id: string,
+    dto: UpdateGmailAccountDTO,
+  ): Promise<responseMessageInterface> {
+    try {
+      await this.gmailAccountRepository.update(id, dto);
+      return customMessageResponse(
+        HttpStatus.OK,
+        MESSAGE.SUCCESS,
+        await this.gmailAccountRepository.findOne({ where: { id } }),
+      );
+    } catch (error) {
+      return customMessageResponse(HttpStatus.BAD_REQUEST, MESSAGE.BAD_REQUEST);
+    }
   }
 
   /**
    * Gets the webhook for the provided code and state.
    * @param query An object containing the code and state for the webhook.
-   * @returns An object containing a success message and the email associated with the webhook.
+   * @returns An object containing a success message and the email of the Gmail account that was updated.
    */
-  async getWebhook(query: { code: string; state: string }) {
+  async getWebhook(query: {
+    code: string;
+    state: string;
+  }): Promise<responseMessageInterface> {
     const oAuth2Client = getOAuth2Client();
     const { tokens } = await oAuth2Client.getToken(query.code);
 
@@ -68,10 +91,11 @@ export class GmailAccountService {
       ...updates, // the new updates
     });
 
-    return {
-      message: 'Gmail account updated successfully.',
-      email: gmailAccount.email,
-    };
+    return customMessageResponse(
+      HttpStatus.OK,
+      'Gmail account updated successfully.',
+      { email: gmailAccount.email },
+    );
   }
 
   /**
