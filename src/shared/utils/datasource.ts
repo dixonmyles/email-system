@@ -1,5 +1,7 @@
 import { DataSource } from 'typeorm';
 import { join } from 'path';
+import { loadConfig } from './config';
+loadConfig();
 
 export const connectionSource = new DataSource({
   type: 'postgres',
